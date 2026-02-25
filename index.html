@@ -921,10 +921,36 @@
             const [isHovered, setIsHovered] = useState(false);
             const [eventScore, setEventScore] = useState(null);
             
-            // Load event score if completed
+            // Load event score if completed or in progress
             useEffect(() => {
-                if (event.status === 'completed') {
+                if (event.status === 'completed' || event.status === 'in_progress') {
                     loadEventScore();
+                    
+                    // Subscribe to real-time updates for live scoring
+                    const channel = supabaseClient
+                        .channel(`event-score-${event.id}`)
+                        .on('postgres_changes', {
+                            event: '*',
+                            schema: 'public',
+                            table: 'matches',
+                            filter: `event_id=eq.${event.id}`
+                        }, () => {
+                            loadEventScore();
+                        })
+                        .on('postgres_changes', {
+                            event: '*',
+                            schema: 'public',
+                            table: 'poker_players'
+                        }, () => {
+                            if (event.name === 'Poker') {
+                                loadEventScore();
+                            }
+                        })
+                        .subscribe();
+                    
+                    return () => {
+                        supabaseClient.removeChannel(channel);
+                    };
                 }
             }, [event.status]);
 
