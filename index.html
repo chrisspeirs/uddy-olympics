@@ -501,6 +501,19 @@
                                             gap: '0.5rem',
                                         }}
                                     >
+                                        {player.name === 'Davy' && (
+                                            <img 
+                                                src="./images/davy.jpg" 
+                                                alt="Davy"
+                                                style={{
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    marginRight: '0.5rem'
+                                                }}
+                                            />
+                                        )}
                                         {player.name}
                                         {(player.name === 'Chris' || player.name === 'Thomas') && (
                                             <span style={{ fontSize: '0.8rem', opacity: 0.7 }}> 🔐</span>
