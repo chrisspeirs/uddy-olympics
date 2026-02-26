@@ -264,6 +264,40 @@
         }
 
         // =============================================================================
+        // HELPER COMPONENTS
+        // =============================================================================
+
+        function PlayerPhoto({ playerName, size = '40px' }) {
+            if (!playerName) return null;
+            
+            return (
+                <img 
+                    src={`./images/${playerName.toLowerCase()}.jpg`}
+                    alt={playerName}
+                    style={{
+                        width: size,
+                        height: size,
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        flexShrink: 0
+                    }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                />
+            );
+        }
+
+        function PlayerNameWithPhoto({ player, size = '30px', showPhoto = true }) {
+            if (!player) return <span>???</span>;
+            
+            return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                    {showPhoto && <PlayerPhoto playerName={player.name} size={size} />}
+                    <span>{player.name}</span>
+                </div>
+            );
+        }
+
+        // =============================================================================
         // LOGIN VIEW
         // =============================================================================
 
@@ -460,6 +494,20 @@
                                             gap: '0.5rem',
                                         }}
                                     >
+                                        {player.name && (
+                                            <img 
+                                                src={`./images/${player.name.toLowerCase()}.jpg`}
+                                                alt={player.name}
+                                                style={{
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    marginRight: '0.5rem'
+                                                }}
+                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                            />
+                                        )}
                                         {player.name}
                                         {(player.name === 'Chris' || player.name === 'Thomas') && (
                                             <span style={{ fontSize: '0.8rem', opacity: 0.7 }}> 🔐</span>
@@ -501,10 +549,10 @@
                                             gap: '0.5rem',
                                         }}
                                     >
-                                        {player.name === 'Davy' && (
+                                        {player.name && (
                                             <img 
-                                                src="./images/davy.jpg" 
-                                                alt="Davy"
+                                                src={`./images/${player.name.toLowerCase()}.jpg`}
+                                                alt={player.name}
                                                 style={{
                                                     width: '40px',
                                                     height: '40px',
@@ -512,6 +560,7 @@
                                                     objectFit: 'cover',
                                                     marginRight: '0.5rem'
                                                 }}
+                                                onError={(e) => { e.target.style.display = 'none'; }}
                                             />
                                         )}
                                         {player.name}
