@@ -4159,44 +4159,9 @@
             const pickedPlayerIds = draftPicks.map(p => p.player_id);
             const myTeamPlayers = userTeam === 'team_a' ? teamAPlayers : teamBPlayers;
             
-            // For available players, check if they can still be picked
+            // For singles, everyone can only be picked once
             const availablePlayers = myTeamPlayers.filter(p => {
-                const timesPicked = draftPicks.filter(pick => pick.player_id === p.id).length;
-                const isTeamB = p.team_id === teamB?.id;
-                
-                // Team A can only be picked once
-                if (!isTeamB) {
-                    return timesPicked === 0;
-                }
-                
-                // Team B logic
-                if (timesPicked >= 2) {
-                    // Already picked twice, can't pick again
-                    return false;
-                }
-                
-                if (timesPicked === 1) {
-                    // This would be their second pick
-                    // Check if another Team B player has already been picked twice in THIS event
-                    const teamBPlayerIds = teamBPlayers.map(tp => tp.id);
-                    const playersPickedTwiceInThisEvent = teamBPlayerIds.filter(pId => {
-                        return draftPicks.filter(pick => pick.player_id === pId).length >= 2;
-                    });
-                    
-                    if (playersPickedTwiceInThisEvent.length > 0) {
-                        // Another player already doubled in this event, can't double this one
-                        return false;
-                    }
-                    
-                    // Check if this player has already doubled in a PREVIOUS event today
-                    const hasDoubledBefore = doublePlayRecords.some(record => record.player_id === p.id);
-                    if (hasDoubledBefore) {
-                        // This player already doubled in another event, can't pick twice again
-                        return false;
-                    }
-                }
-                
-                return true;
+                return !pickedPlayerIds.includes(p.id);
             });
 
             return (
@@ -4231,7 +4196,6 @@
                             </h4>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
                                 {availablePlayers.map(player => {
-                                    const timesPicked = draftPicks.filter(p => p.player_id === player.id).length;
                                     return (
                                         <button
                                             key={player.id}
@@ -4251,29 +4215,9 @@
                                                 fontFamily: 'inherit',
                                                 letterSpacing: '2px',
                                                 transition: 'all 0.3s',
-                                                position: 'relative',
                                             }}
                                         >
                                             {player.name}
-                                            {timesPicked === 1 && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: '0.5rem',
-                                                    right: '0.5rem',
-                                                    background: '#ffd700',
-                                                    color: '#0f0c29',
-                                                    borderRadius: '50%',
-                                                    width: '24px',
-                                                    height: '24px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    fontSize: '0.9rem',
-                                                    fontWeight: 'bold',
-                                                }}>
-                                                    1
-                                                </div>
-                                            )}
                                         </button>
                                     );
                                 })}
