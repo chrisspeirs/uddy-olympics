@@ -297,6 +297,36 @@
             );
         }
 
+        function MatchPlayersDisplay({ player1Name, player2Name, isTeamMatch, teamName, size = '25px' }) {
+            if (isTeamMatch) {
+                return <span>{teamName}</span>;
+            }
+            
+            if (player2Name) {
+                // Doubles
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <PlayerPhoto playerName={player1Name} size={size} />
+                            <span>{player1Name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <PlayerPhoto playerName={player2Name} size={size} />
+                            <span>{player2Name}</span>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // Singles
+            return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+                    <PlayerPhoto playerName={player1Name} size={size} />
+                    <span>{player1Name}</span>
+                </div>
+            );
+        }
+
         // =============================================================================
         // LOGIN VIEW
         // =============================================================================
@@ -2073,7 +2103,8 @@
                                                     }}>
                                                         {pp.position}
                                                     </span>
-                                                    {player?.name}
+                                                    <PlayerPhoto playerName={player?.name} size="25px" />
+                                                    <span style={{ marginLeft: '0.5rem' }}>{player?.name}</span>
                                                 </button>
                                             );
                                         })}
@@ -2115,7 +2146,8 @@
                                                     fontFamily: 'inherit',
                                                 }}
                                             >
-                                                {player?.name}
+                                                <PlayerPhoto playerName={player?.name} size="30px" />
+                                                <span style={{ marginLeft: '0.5rem' }}>{player?.name}</span>
                                             </button>
                                         );
                                     })}
@@ -2172,7 +2204,8 @@
                                             }}>
                                                 {pp.position}
                                             </span>
-                                            <span style={{ flex: 1 }}>{player?.name}</span>
+                                            <PlayerPhoto playerName={player?.name} size="30px" />
+                                            <span style={{ flex: 1, marginLeft: '0.5rem' }}>{player?.name}</span>
                                             <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem' }}>
                                                 KO by: {eliminator?.name || '?'}
                                             </span>
@@ -2340,7 +2373,11 @@
                                             fontSize: '2rem', 
                                             color: isTeamA ? '#ff6b6b' : '#4ecdc4',
                                             marginBottom: '0.5rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '1rem',
                                         }}>
+                                            <PlayerPhoto playerName={player?.name} size="50px" />
                                             {player?.name}
                                         </div>
                                         <div style={{ 
@@ -2406,7 +2443,11 @@
                                                 fontSize: '1.3rem', 
                                                 color: isTeamA ? '#ff6b6b' : '#4ecdc4',
                                                 marginBottom: '0.3rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
                                             }}>
+                                                <PlayerPhoto playerName={player?.name} size="30px" />
                                                 {player?.name}
                                             </div>
                                             {pp.position !== 1 && eliminator && (
@@ -2527,7 +2568,12 @@
                                         👑
                                     </div>
                                 )}
-                                {teamADisplay}
+                                <MatchPlayersDisplay 
+                                    player1Name={teamAPlayer1}
+                                    player2Name={teamAPlayer2}
+                                    isTeamMatch={match.match_type === 'team'}
+                                    teamName="TEAM A"
+                                />
                             </div>
 
                             <div style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.3)', fontWeight: 'bold' }}>
@@ -2556,7 +2602,12 @@
                                         👑
                                     </div>
                                 )}
-                                {teamBDisplay}
+                                <MatchPlayersDisplay 
+                                    player1Name={teamBPlayer1}
+                                    player2Name={teamBPlayer2}
+                                    isTeamMatch={match.match_type === 'team'}
+                                    teamName="TEAM B"
+                                />
                             </div>
                         </div>
 
@@ -3184,7 +3235,12 @@
                                 e.currentTarget.style.boxShadow = 'none';
                             }}
                         >
-                            {teamADisplay}
+                            <MatchPlayersDisplay 
+                                player1Name={teamAPlayer1}
+                                player2Name={teamAPlayer2}
+                                isTeamMatch={match.match_type === 'team'}
+                                teamName="TEAM A"
+                            />
                             {teamAConfirmed === 'team_a' && !isConfirmed && (
                                 <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#ffd700' }}>
                                     {userTeam === 'team_a' ? '✓ You voted' : '✓ Other admin voted'}
@@ -3231,7 +3287,12 @@
                                 e.currentTarget.style.boxShadow = 'none';
                             }}
                         >
-                            {teamBDisplay}
+                            <MatchPlayersDisplay 
+                                player1Name={teamBPlayer1}
+                                player2Name={teamBPlayer2}
+                                isTeamMatch={match.match_type === 'team'}
+                                teamName="TEAM B"
+                            />
                             {teamBConfirmed === 'team_b' && !isConfirmed && (
                                 <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#ffd700' }}>
                                     {userTeam === 'team_b' ? '✓ You voted' : '✓ Other admin voted'}
@@ -3325,10 +3386,14 @@
                                                 background: teamAPlayer ? 'rgba(255, 107, 107, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                                                 border: teamAPlayer ? '2px solid rgba(255, 107, 107, 0.5)' : '2px dashed rgba(255, 255, 255, 0.2)',
                                                 borderRadius: '8px',
-                                                textAlign: 'center',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
                                                 fontSize: '1.3rem',
                                                 color: teamAPlayer ? '#ff6b6b' : 'rgba(255, 255, 255, 0.3)',
                                             }}>
+                                                {teamAPlayer && <PlayerPhoto playerName={teamAPlayer.name} size="30px" />}
                                                 {teamAPlayer ? teamAPlayer.name : '???'}
                                             </div>
                                             <div style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.3)', fontWeight: 'bold' }}>
@@ -3339,10 +3404,14 @@
                                                 background: teamBPlayer ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                                                 border: teamBPlayer ? '2px solid rgba(78, 205, 196, 0.5)' : '2px dashed rgba(255, 255, 255, 0.2)',
                                                 borderRadius: '8px',
-                                                textAlign: 'center',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
                                                 fontSize: '1.3rem',
                                                 color: teamBPlayer ? '#4ecdc4' : 'rgba(255, 255, 255, 0.3)',
                                             }}>
+                                                {teamBPlayer && <PlayerPhoto playerName={teamBPlayer.name} size="30px" />}
                                                 {teamBPlayer ? teamBPlayer.name : '???'}
                                             </div>
                                         </div>
@@ -3705,10 +3774,14 @@
                                                 background: teamAPlayer ? 'rgba(255, 107, 107, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                                                 border: teamAPlayer ? '2px solid rgba(255, 107, 107, 0.5)' : '2px dashed rgba(255, 255, 255, 0.2)',
                                                 borderRadius: '8px',
-                                                textAlign: 'center',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
                                                 fontSize: '1.3rem',
                                                 color: teamAPlayer ? '#ff6b6b' : 'rgba(255, 255, 255, 0.3)',
                                             }}>
+                                                {teamAPlayer && <PlayerPhoto playerName={teamAPlayer.name} size="30px" />}
                                                 {teamAPlayer ? teamAPlayer.name : '???'}
                                             </div>
                                             <div style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.3)', fontWeight: 'bold' }}>
@@ -3719,10 +3792,14 @@
                                                 background: teamBPlayer ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                                                 border: teamBPlayer ? '2px solid rgba(78, 205, 196, 0.5)' : '2px dashed rgba(255, 255, 255, 0.2)',
                                                 borderRadius: '8px',
-                                                textAlign: 'center',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
                                                 fontSize: '1.3rem',
                                                 color: teamBPlayer ? '#4ecdc4' : 'rgba(255, 255, 255, 0.3)',
                                             }}>
+                                                {teamBPlayer && <PlayerPhoto playerName={teamBPlayer.name} size="30px" />}
                                                 {teamBPlayer ? teamBPlayer.name : '???'}
                                             </div>
                                         </div>
@@ -4297,10 +4374,14 @@
                                                 background: teamAPlayer ? 'rgba(255, 107, 107, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                                                 border: teamAPlayer ? '2px solid rgba(255, 107, 107, 0.5)' : '2px dashed rgba(255, 255, 255, 0.2)',
                                                 borderRadius: '8px',
-                                                textAlign: 'center',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
                                                 fontSize: '1.3rem',
                                                 color: teamAPlayer ? '#ff6b6b' : 'rgba(255, 255, 255, 0.3)',
                                             }}>
+                                                {teamAPlayer && <PlayerPhoto playerName={teamAPlayer.name} size="30px" />}
                                                 {teamAPlayer ? teamAPlayer.name : '???'}
                                             </div>
                                             <div style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.3)', fontWeight: 'bold' }}>
@@ -4311,10 +4392,14 @@
                                                 background: teamBPlayer ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                                                 border: teamBPlayer ? '2px solid rgba(78, 205, 196, 0.5)' : '2px dashed rgba(255, 255, 255, 0.2)',
                                                 borderRadius: '8px',
-                                                textAlign: 'center',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
                                                 fontSize: '1.3rem',
                                                 color: teamBPlayer ? '#4ecdc4' : 'rgba(255, 255, 255, 0.3)',
                                             }}>
+                                                {teamBPlayer && <PlayerPhoto playerName={teamBPlayer.name} size="30px" />}
                                                 {teamBPlayer ? teamBPlayer.name : '???'}
                                             </div>
                                         </div>
