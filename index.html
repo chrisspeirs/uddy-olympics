@@ -1456,8 +1456,8 @@
         async function createMatchesFromDraft(event, singlesPicks, doublesPicks) {
             const matches = [];
             
-            // Create singles matches (6 matches from 12 picks)
-            const pickPairs = [[0,1], [2,3], [4,5], [6,7], [8,9], [10,11]];
+            // Create singles matches (5 matches from 10 picks)
+            const pickPairs = [[0,1], [2,3], [4,5], [6,7], [8,9]];
             pickPairs.forEach((pair, index) => {
                 const pick1 = singlesPicks[pair[0]];
                 const pick2 = singlesPicks[pair[1]];
@@ -1510,8 +1510,8 @@
             console.log('Creating Computer Games matches, event:', event, 'singlesPicks:', singlesPicks.length);
             const matches = [];
             
-            // Create 6 Tekken singles matches
-            const pickPairs = [[0,1], [2,3], [4,5], [6,7], [8,9], [10,11]];
+            // Create 5 Tekken singles matches
+            const pickPairs = [[0,1], [2,3], [4,5], [6,7], [8,9]];
             pickPairs.forEach((pair, index) => {
                 const pick1 = singlesPicks[pair[0]];
                 const pick2 = singlesPicks[pair[1]];
@@ -3993,8 +3993,8 @@
                 const singlesPicks = (data || []).filter(p => p.pick_type === 'single');
                 const doublesPicks = (data || []).filter(p => p.pick_type === 'double');
                 
-                if (singlesPicks.length >= 12) {
-                    // 6 singles matches = 12 picks, move to doubles
+                if (singlesPicks.length >= 10) {
+                    // 5 singles matches = 10 picks, move to doubles
                     setDraftPhase('doubles');
                 } else {
                     setDraftPhase('singles');
@@ -4042,36 +4042,11 @@
                     return;
                 }
                 
-                // Team B (5 players) - only ONE player can be picked twice per event
-                if (isTeamB && timesPickedInThisEvent >= 2) {
-                    alert('This player has already been picked twice in this event!');
+                // Check player hasn't been picked already in singles
+                const alreadyPicked = draftPicks.some(pick => pick.player_id === playerId);
+                if (alreadyPicked) {
+                    alert('This player has already been picked!');
                     return;
-                }
-                
-                // If this would be the second pick for a Team B player
-                if (isTeamB && timesPickedInThisEvent === 1) {
-                    // Check if another Team B player has already been picked twice in THIS event
-                    const teamBPlayerIds = teamBPlayers.map(p => p.id);
-                    const playersPickedTwice = teamBPlayerIds.filter(pId => {
-                        return draftPicks.filter(pick => pick.player_id === pId).length >= 2;
-                    });
-                    
-                    if (playersPickedTwice.length > 0) {
-                        const doublePlayer = players.find(p => p.id === playersPickedTwice[0]);
-                        alert(`Only ONE player can play twice per event. ${doublePlayer.name} has already been picked twice.`);
-                        return;
-                    }
-                    
-                    // Check if they've already used their double-play TODAY in another event
-                    const { data: todayDoubles } = await supabaseClient
-                        .from('player_double_plays')
-                        .select('*')
-                        .eq('player_id', playerId);
-                    
-                    if (todayDoubles && todayDoubles.length > 0) {
-                        alert(`${player.name} has already played twice in a previous event today. Choose a different player.`);
-                        return;
-                    }
                 }
 
                 const pickNumber = draftPicks.length;
@@ -4086,23 +4061,6 @@
                         player_id: playerId,
                         pick_type: 'single'
                     });
-
-                // If this is Team B player's second pick, record it in double_plays
-                const timesNowPicked = draftPicks.filter(p => p.player_id === playerId).length + 1;
-                if (isTeamB && timesNowPicked === 2) {
-                    const { data: compData } = await supabaseClient
-                        .from('competition')
-                        .select('id')
-                        .single();
-                    
-                    await supabaseClient
-                        .from('player_double_plays')
-                        .insert({
-                            competition_id: compData.id,
-                            player_id: playerId,
-                            event_id: event.id
-                        });
-                }
 
                 // Snake draft logic works the same regardless of who picks first
                 // The pattern is always: First, Second, Second, First, First, Second, Second, First...
@@ -4329,22 +4287,20 @@
                             Match-ups:
                         </h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {[0, 1, 2, 3, 4, 5].map(matchIndex => {
-                                // ABBAABBA pattern means:
+                            {[0, 1, 2, 3, 4].map(matchIndex => {
+                                // ABBAABBA pattern (first 10 picks):
                                 // Match 0: pick 0 (A) vs pick 1 (B)
                                 // Match 1: pick 2 (B) vs pick 3 (A)  
                                 // Match 2: pick 4 (A) vs pick 5 (B)
                                 // Match 3: pick 6 (B) vs pick 7 (A)
                                 // Match 4: pick 8 (A) vs pick 9 (B)
-                                // Match 5: pick 10 (B) vs pick 11 (A)
                                 
                                 const pickIndices = [
                                     [0, 1], // Match 0
                                     [2, 3], // Match 1
                                     [4, 5], // Match 2
                                     [6, 7], // Match 3
-                                    [8, 9], // Match 4
-                                    [10, 11] // Match 5
+                                    [8, 9]  // Match 4
                                 ];
                                 
                                 const [idx1, idx2] = pickIndices[matchIndex];
