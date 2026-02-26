@@ -3746,8 +3746,8 @@
                             SINGLES
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '3rem' }}>
-                            {[0, 1, 2, 3, 4, 5].map(matchIndex => {
-                                const pickIndices = [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10, 11]];
+                            {[0, 1, 2, 3, 4].map(matchIndex => {
+                                const pickIndices = [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]];
                                 const [idx1, idx2] = pickIndices[matchIndex];
                                 const pick1 = singlesPicks[idx1];
                                 const pick2 = singlesPicks[idx2];
