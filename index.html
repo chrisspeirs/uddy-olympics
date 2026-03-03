@@ -100,11 +100,11 @@
                     .select('winner_team, points_awarded, is_confirmed')
                     .eq('is_confirmed', true);
 
-                const teamAScore = (matches || [])
+                let teamAScore = (matches || [])
                     .filter(m => m.winner_team === 'team_a')
                     .reduce((sum, m) => sum + (m.points_awarded || 0), 0);
 
-                const teamBScore = (matches || [])
+                let teamBScore = (matches || [])
                     .filter(m => m.winner_team === 'team_b')
                     .reduce((sum, m) => sum + (m.points_awarded || 0), 0);
 
