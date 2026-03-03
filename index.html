@@ -93,13 +93,68 @@
                 loadData();
             }, []);
 
+            const calculateScoresFromMatches = async () => {
+                // Get all confirmed matches
+                const { data: matches } = await supabaseClient
+                    .from('matches')
+                    .select('winner_team, points_awarded, is_confirmed')
+                    .eq('is_confirmed', true);
+
+                const teamAScore = (matches || [])
+                    .filter(m => m.winner_team === 'team_a')
+                    .reduce((sum, m) => sum + (m.points_awarded || 0), 0);
+
+                const teamBScore = (matches || [])
+                    .filter(m => m.winner_team === 'team_b')
+                    .reduce((sum, m) => sum + (m.points_awarded || 0), 0);
+
+                // Get poker scores
+                const { data: pokerPlayers } = await supabaseClient
+                    .from('poker_players')
+                    .select('total_points, player_id');
+
+                if (pokerPlayers && pokerPlayers.length > 0) {
+                    const { data: players } = await supabaseClient
+                        .from('players')
+                        .select('id, team_id');
+
+                    const teamIds = await supabaseClient
+                        .from('teams')
+                        .select('id, name');
+
+                    const teamAId = teamIds.data?.find(t => t.name === 'Team A')?.id;
+
+                    pokerPlayers.forEach(pp => {
+                        const player = players?.find(p => p.id === pp.player_id);
+                        if (player) {
+                            if (player.team_id === teamAId) {
+                                teamAScore += pp.total_points || 0;
+                            } else {
+                                teamBScore += pp.total_points || 0;
+                            }
+                        }
+                    });
+                }
+
+                return { teamAScore, teamBScore };
+            };
+
             const loadData = async () => {
                 try {
                     const { data: compData } = await supabaseClient
                         .from('competition')
                         .select('*')
                         .single();
-                    setCompetition(compData);
+                    
+                    // Calculate actual scores from matches
+                    const { teamAScore, teamBScore } = await calculateScoresFromMatches();
+                    
+                    // Override database values with calculated scores
+                    setCompetition({
+                        ...compData,
+                        team_a_score: teamAScore,
+                        team_b_score: teamBScore
+                    });
 
                     const { data: teamsData } = await supabaseClient
                         .from('teams')
@@ -1255,71 +1310,7 @@
                             <button
                                 onClick={async () => {
                                     if (confirm('Are you sure you want to RESET this event? This will delete all data and start over.')) {
-                                        // Revert the points first (regardless of status)
-                                        const { data: competition } = await supabaseClient
-                                            .from('competition')
-                                            .select('*')
-                                            .single();
-                                        
-                                        let teamARevert = 0;
-                                        let teamBRevert = 0;
-                                        
-                                        if (event.name === 'Poker') {
-                                                // Get all poker players and sum their points
-                                                const { data: tournament } = await supabaseClient
-                                                    .from('poker_tournament')
-                                                    .select('id')
-                                                    .eq('event_id', event.id)
-                                                    .maybeSingle();
-                                                
-                                                if (tournament) {
-                                                    const { data: pokerPlayersData } = await supabaseClient
-                                                        .from('poker_players')
-                                                        .select('*')
-                                                        .eq('tournament_id', tournament.id);
-                                                    
-                                                    if (pokerPlayersData) {
-                                                        pokerPlayersData.forEach(pp => {
-                                                            const player = players.find(p => p.id === pp.player_id);
-                                                            if (!player) return;
-                                                            
-                                                            const teamAId = teams.find(t => t.name === 'Team A')?.id;
-                                                            if (player.team_id === teamAId) {
-                                                                teamARevert += pp.total_points || 0;
-                                                            } else {
-                                                                teamBRevert += pp.total_points || 0;
-                                                            }
-                                                        });
-                                                    }
-                                                }
-                                            } else {
-                                                // Get all matches and sum points
-                                                const { data: eventMatches } = await supabaseClient
-                                                    .from('matches')
-                                                    .select('*')
-                                                    .eq('event_id', event.id);
-                                                
-                                                if (eventMatches) {
-                                                    eventMatches.forEach(match => {
-                                                        if (match.is_confirmed) {
-                                                            if (match.winner_team === 'team_a') {
-                                                                teamARevert += match.points_awarded;
-                                                            } else if (match.winner_team === 'team_b') {
-                                                                teamBRevert += match.points_awarded;
-                                                            }
-                                                        }
-                                                    });
-                                                }
-                                            }
-                                            
-                                            // Revert the scores
-                                            await supabaseClient
-                                                .from('competition')
-                                                .update({
-                                                    team_a_score: competition.team_a_score - teamARevert,
-                                                    team_b_score: competition.team_b_score - teamBRevert
-                                                })
-                                                .eq('id', competition.id);
+                                        // Scores are calculated from matches/poker_players, so no need to revert competition table
                                         
                                         if (event.name === 'Poker') {
                                             // Delete poker-specific data
@@ -1840,12 +1831,7 @@
                     .select('*')
                     .eq('tournament_id', tournament.id);
 
-                // Award points to teams based on poker results
-                const { data: competition } = await supabaseClient
-                    .from('competition')
-                    .select('*')
-                    .single();
-
+                // Calculate team points for logging
                 let teamAPoints = 0;
                 let teamBPoints = 0;
 
@@ -1863,13 +1849,7 @@
 
                 console.log('Tournament complete! Team A points:', teamAPoints, 'Team B points:', teamBPoints);
 
-                await supabaseClient
-                    .from('competition')
-                    .update({
-                        team_a_score: competition.team_a_score + teamAPoints,
-                        team_b_score: competition.team_b_score + teamBPoints
-                    })
-                    .eq('id', competition.id);
+                // Scores are now calculated from poker_players table, no need to update competition
 
                 await supabaseClient
                     .from('events')
@@ -2802,8 +2782,7 @@
                             })
                             .eq('id', matchId);
                         
-                        // Update competition scores
-                        await updateCompetitionScores(updatedMatch.team_a_confirmed_winner, updatedMatch.points_awarded);
+                        // Scores are now calculated from matches, no need to update competition table
                     } else {
                         // Disagreement! Clear both selections
                         await supabaseClient
@@ -2820,23 +2799,6 @@
 
                 loadMatches();
                 loadData();
-            };
-
-            const updateCompetitionScores = async (winnerTeam, points) => {
-                const { data: competition } = await supabaseClient
-                    .from('competition')
-                    .select('*')
-                    .single();
-
-                const newScores = {
-                    team_a_score: competition.team_a_score + (winnerTeam === 'team_a' ? points : 0),
-                    team_b_score: competition.team_b_score + (winnerTeam === 'team_b' ? points : 0)
-                };
-
-                await supabaseClient
-                    .from('competition')
-                    .update(newScores)
-                    .eq('id', competition.id);
             };
 
             if (loading) {
@@ -2974,39 +2936,8 @@
                             {/* Reset All Scores button */}
                             <button
                                 onClick={async () => {
-                                    if (confirm('RESET ALL SCORES for this event? This will clear all results and revert scores. This cannot be undone!')) {
-                                        // Get all matches for this event
-                                        const { data: eventMatches } = await supabaseClient
-                                            .from('matches')
-                                            .select('*')
-                                            .eq('event_id', event.id);
-                                        
-                                        // Revert competition scores
-                                        const { data: competition } = await supabaseClient
-                                            .from('competition')
-                                            .select('*')
-                                            .single();
-                                        
-                                        let teamARevert = 0;
-                                        let teamBRevert = 0;
-                                        
-                                        eventMatches.forEach(match => {
-                                            if (match.is_confirmed) {
-                                                if (match.winner_team === 'team_a') {
-                                                    teamARevert += match.points_awarded;
-                                                } else if (match.winner_team === 'team_b') {
-                                                    teamBRevert += match.points_awarded;
-                                                }
-                                            }
-                                        });
-                                        
-                                        await supabaseClient
-                                            .from('competition')
-                                            .update({
-                                                team_a_score: competition.team_a_score - teamARevert,
-                                                team_b_score: competition.team_b_score - teamBRevert
-                                            })
-                                            .eq('id', competition.id);
+                                    if (confirm('RESET ALL SCORES for this event? This will clear all results. This cannot be undone!')) {
+                                        // Scores are calculated from matches, so just clear the match results
                                         
                                         // Clear all match results
                                         await supabaseClient
